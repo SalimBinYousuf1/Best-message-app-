@@ -1,0 +1,6 @@
+{
+  "name": "Salim",
+  "description": "A loved, premium native Android SMS/MMS messaging app with Apple-inspired liquid glass design, fast search, scheduling, and reliable conversation management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
