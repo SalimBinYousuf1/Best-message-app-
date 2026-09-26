@@ -33,7 +33,9 @@ data class SalimUserPreferences(
     val notificationPrivacy: NotificationPrivacy = NotificationPrivacy.SHOW_ALL,
     val hapticFeedback: Boolean = true,
     val appLockEnabled: Boolean = false,
-    val hasCompletedOnboarding: Boolean = false
+    val hasCompletedOnboarding: Boolean = false,
+    val bubbleTextScale: Float = 1.0f,
+    val glassIntensity: Float = 0.82f
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "salim_settings")
@@ -50,6 +52,8 @@ class SalimPreferences(private val context: Context) {
     private val KEY_HAPTIC_FEEDBACK = booleanPreferencesKey("haptic_feedback")
     private val KEY_APP_LOCK_ENABLED = booleanPreferencesKey("app_lock_enabled")
     private val KEY_HAS_COMPLETED_ONBOARDING = booleanPreferencesKey("has_completed_onboarding")
+    private val KEY_BUBBLE_TEXT_SCALE = androidx.datastore.preferences.core.floatPreferencesKey("bubble_text_scale")
+    private val KEY_GLASS_INTENSITY = androidx.datastore.preferences.core.floatPreferencesKey("glass_intensity")
 
     val preferencesFlow: Flow<SalimUserPreferences> = context.dataStore.data.map { prefs ->
         SalimUserPreferences(
@@ -66,7 +70,9 @@ class SalimPreferences(private val context: Context) {
             }.getOrDefault(NotificationPrivacy.SHOW_ALL),
             hapticFeedback = prefs[KEY_HAPTIC_FEEDBACK] ?: true,
             appLockEnabled = prefs[KEY_APP_LOCK_ENABLED] ?: false,
-            hasCompletedOnboarding = prefs[KEY_HAS_COMPLETED_ONBOARDING] ?: false
+            hasCompletedOnboarding = prefs[KEY_HAS_COMPLETED_ONBOARDING] ?: false,
+            bubbleTextScale = prefs[KEY_BUBBLE_TEXT_SCALE] ?: 1.0f,
+            glassIntensity = prefs[KEY_GLASS_INTENSITY] ?: 0.82f
         )
     }
 
@@ -108,5 +114,13 @@ class SalimPreferences(private val context: Context) {
 
     suspend fun setHasCompletedOnboarding(completed: Boolean) {
         context.dataStore.edit { it[KEY_HAS_COMPLETED_ONBOARDING] = completed }
+    }
+
+    suspend fun setBubbleTextScale(scale: Float) {
+        context.dataStore.edit { it[KEY_BUBBLE_TEXT_SCALE] = scale }
+    }
+
+    suspend fun setGlassIntensity(intensity: Float) {
+        context.dataStore.edit { it[KEY_GLASS_INTENSITY] = intensity }
     }
 }

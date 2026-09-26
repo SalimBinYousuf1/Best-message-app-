@@ -64,6 +64,9 @@ import com.example.data.local.entity.ConversationEntity
 import com.example.telephony.ContactResolver
 import com.example.telephony.DefaultSmsRoleManager
 import com.example.ui.components.ContactAvatar
+import com.example.ui.components.LiquidGlassButton
+import com.example.ui.components.LiquidGlassButtonStyle
+import com.example.ui.components.LiquidGlassSegmentedControl
 import com.example.ui.components.LiquidGlassTopBar
 import com.example.ui.theme.SalimBlue
 import com.example.ui.theme.liquidGlass
@@ -204,11 +207,17 @@ fun InboxScreen(
                 )
             }
 
-            // Filter Tabs (All, Unread, Starred, Archived)
-            FilterTabRow(
-                currentFilter = uiState.filter,
-                onFilterSelected = { viewModel.setFilter(it) },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            // Filter Tabs (All, Unread, Starred, Archived) with sliding glass thumb
+            LiquidGlassSegmentedControl(
+                items = listOf(
+                    InboxFilter.ALL to "All",
+                    InboxFilter.UNREAD to "Unread",
+                    InboxFilter.STARRED to "Pinned",
+                    InboxFilter.ARCHIVED to "Archived"
+                ),
+                selectedItem = uiState.filter,
+                onItemSelected = { viewModel.setFilter(it) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
             )
 
             // Pinned conversations row (if on ALL filter and pinned exists)
@@ -292,63 +301,14 @@ private fun DefaultSmsNoticeCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(10.dp))
-            Button(
+            LiquidGlassButton(
                 onClick = onSetDefaultClick,
-                colors = ButtonDefaults.buttonColors(containerColor = SalimBlue),
-                shape = RoundedCornerShape(12.dp),
+                style = LiquidGlassButtonStyle.PRIMARY,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("set_default_sms_button")
             ) {
-                Text("Set as Default App", fontWeight = FontWeight.SemiBold)
-            }
-        }
-    }
-}
-
-@Composable
-private fun FilterTabRow(
-    currentFilter: InboxFilter,
-    onFilterSelected: (InboxFilter) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val tabs = listOf(
-        InboxFilter.ALL to "All",
-        InboxFilter.UNREAD to "Unread",
-        InboxFilter.STARRED to "Pinned",
-        InboxFilter.ARCHIVED to "Archived"
-    )
-    val selectedIndex = tabs.indexOfFirst { it.first == currentFilter }.coerceAtLeast(0)
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .liquidGlass(shape = RoundedCornerShape(14.dp), elevation = 2.dp)
-            .padding(4.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            tabs.forEachIndexed { index, (filter, label) ->
-                val isSelected = index == selectedIndex
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (isSelected) SalimBlue else Color.Transparent)
-                        .clickable { onFilterSelected(filter) }
-                        .padding(vertical = 7.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                        ),
-                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text("Set as Default App", fontWeight = FontWeight.SemiBold, color = Color.White)
             }
         }
     }
@@ -458,27 +418,26 @@ private fun EmptyInboxView(
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (filter == InboxFilter.ALL) {
-                    Button(
+                    LiquidGlassButton(
                         onClick = onComposeClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = SalimBlue),
-                        shape = RoundedCornerShape(14.dp)
+                        style = LiquidGlassButtonStyle.PRIMARY
                     ) {
-                        Text("Start conversation")
+                        Text("Start conversation", color = Color.White, fontWeight = FontWeight.SemiBold)
                     }
 
-                    Button(
+                    LiquidGlassButton(
                         onClick = onSyncClick,
                         enabled = !isSyncing,
-                        colors = ButtonDefaults.outlinedButtonColors(),
-                        shape = RoundedCornerShape(14.dp)
+                        style = LiquidGlassButtonStyle.SECONDARY
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(16.dp),
+                            tint = SalimBlue
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(if (isSyncing) "Syncing..." else "Import SMS")
+                        Text(if (isSyncing) "Syncing..." else "Import SMS", fontWeight = FontWeight.Medium)
                     }
                 }
             }

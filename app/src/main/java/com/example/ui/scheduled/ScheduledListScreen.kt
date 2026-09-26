@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.local.entity.ScheduledMessageEntity
 import com.example.ui.components.ContactAvatar
+import com.example.ui.components.LiquidGlassButton
+import com.example.ui.components.LiquidGlassButtonStyle
 import com.example.ui.components.LiquidGlassTopBar
 import com.example.ui.theme.SalimBlue
 import com.example.ui.theme.StatusError
@@ -180,18 +182,18 @@ private fun ScheduledMessageCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                Button(
+                LiquidGlassButton(
                     onClick = onSendNow,
-                    colors = ButtonDefaults.buttonColors(containerColor = SalimBlue),
-                    shape = RoundedCornerShape(12.dp)
+                    style = LiquidGlassButtonStyle.PRIMARY
                 ) {
                     Icon(
                         imageVector = Icons.Default.Send,
                         contentDescription = null,
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(14.dp),
+                        tint = androidx.compose.ui.graphics.Color.White
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Send Now")
+                    Text("Send Now", color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

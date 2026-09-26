@@ -39,6 +39,9 @@ interface MessageDao {
     @Query("UPDATE messages SET isStarred = :isStarred WHERE id = :id")
     suspend fun setStarred(id: Long, isStarred: Boolean)
 
+    @Query("UPDATE messages SET reaction = :reaction WHERE id = :id")
+    suspend fun updateReaction(id: Long, reaction: String?)
+
     @Query("SELECT * FROM messages WHERE isStarred = 1 ORDER BY timestamp DESC")
     fun getStarredMessages(): Flow<List<MessageEntity>>
 

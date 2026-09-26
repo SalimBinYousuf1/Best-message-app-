@@ -73,4 +73,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setAppLock(enabled: Boolean) {
         viewModelScope.launch { preferences.setAppLockEnabled(enabled) }
     }
+
+    fun setBubbleTextScale(scale: Float) {
+        viewModelScope.launch { preferences.setBubbleTextScale(scale) }
+    }
+
+    fun setGlassIntensity(intensity: Float) {
+        viewModelScope.launch { preferences.setGlassIntensity(intensity) }
+    }
 }

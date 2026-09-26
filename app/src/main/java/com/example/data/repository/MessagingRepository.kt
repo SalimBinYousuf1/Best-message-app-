@@ -23,6 +23,7 @@ interface MessagingRepository {
     suspend fun retryMessage(messageId: Long): Result<Unit>
     suspend fun markConversationAsRead(conversationId: Long)
     suspend fun setStarred(messageId: Long, isStarred: Boolean)
+    suspend fun updateReaction(messageId: Long, reaction: String?)
     suspend fun deleteMessage(messageId: Long)
     fun searchMessages(query: String): Flow<List<MessageEntity>>
 }
@@ -104,6 +105,10 @@ class MessagingRepositoryImpl(
 
     override suspend fun setStarred(messageId: Long, isStarred: Boolean) {
         messageDao.setStarred(messageId, isStarred)
+    }
+
+    override suspend fun updateReaction(messageId: Long, reaction: String?) {
+        messageDao.updateReaction(messageId, reaction)
     }
 
     override suspend fun deleteMessage(messageId: Long) {

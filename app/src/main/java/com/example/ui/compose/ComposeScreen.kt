@@ -1,5 +1,6 @@
 package com.example.ui.compose
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,14 +17,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Dialpad
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.telephony.ContactInfo
 import com.example.telephony.ContactResolver
 import com.example.ui.components.ContactAvatar
+import com.example.ui.components.LiquidGlassSearchBar
 import com.example.ui.components.LiquidGlassTopBar
 import com.example.ui.theme.SalimBlue
 import com.example.ui.theme.liquidGlass
@@ -52,6 +50,7 @@ fun ComposeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
+    val view = LocalView.current
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -69,31 +68,14 @@ fun ComposeScreen(
                 .padding(innerPadding)
         ) {
             // Recipient search field
-            Box(
+            LiquidGlassSearchBar(
+                query = uiState.query,
+                onQueryChanged = { viewModel.onQueryChanged(it) },
+                placeholder = "Type name or phone number",
                 modifier = Modifier
-                    .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .liquidGlass(shape = RoundedCornerShape(16.dp), elevation = 2.dp)
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                OutlinedTextField(
-                    value = uiState.query,
-                    onValueChange = { viewModel.onQueryChanged(it) },
-                    placeholder = { Text("Type name or phone number") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            tint = SalimBlue
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("compose_search_field"),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-            }
+                    .testTag("compose_search_field")
+            )
 
             // If user typed a raw phone number, offer direct send option
             val normalizedInput = ContactResolver.normalizePhoneNumber(uiState.query)
@@ -104,6 +86,7 @@ fun ComposeScreen(
                         .padding(horizontal = 16.dp, vertical = 4.dp)
                         .liquidGlass(shape = RoundedCornerShape(14.dp), elevation = 1.dp)
                         .clickable {
+                            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                             coroutineScope.launch {
                                 val convId = viewModel.getOrCreateConversationId(normalizedInput, null)
                                 onNavigateToConversation(convId, normalizedInput)
@@ -144,6 +127,7 @@ fun ComposeScreen(
                     ContactRowItem(
                         contact = contact,
                         onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                             coroutineScope.launch {
                                 val convId = viewModel.getOrCreateConversationId(
                                     contact.normalizedNumber,

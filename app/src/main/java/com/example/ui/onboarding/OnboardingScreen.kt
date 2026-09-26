@@ -43,6 +43,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.telephony.DefaultSmsRoleManager
+import com.example.ui.components.LiquidGlassButton
+import com.example.ui.components.LiquidGlassButtonStyle
 import com.example.ui.theme.SalimBlue
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.liquidGlass
@@ -146,7 +148,7 @@ fun OnboardingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (!isDefaultSms) {
-                    Button(
+                    LiquidGlassButton(
                         onClick = {
                             val intent = DefaultSmsRoleManager.createDefaultSmsIntent(context)
                             if (intent != null) {
@@ -161,7 +163,7 @@ fun OnboardingScreen(
                                 )
                             )
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = SalimBlue),
+                        style = LiquidGlassButtonStyle.PRIMARY,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -170,23 +172,27 @@ fun OnboardingScreen(
                         Text(
                             text = "Set as Default SMS App",
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
                         )
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    Button(
+                    LiquidGlassButton(
                         onClick = onCompleteOnboarding,
-                        colors = ButtonDefaults.textButtonColors(),
-                        modifier = Modifier.fillMaxWidth()
+                        style = LiquidGlassButtonStyle.SECONDARY,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
                     ) {
-                        Text("Continue without default role")
+                        Text("Continue without default role", fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     }
                 } else {
-                    Button(
+                    LiquidGlassButton(
                         onClick = onCompleteOnboarding,
-                        colors = ButtonDefaults.buttonColors(containerColor = SalimBlue),
+                        style = LiquidGlassButtonStyle.PRIMARY,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -195,7 +201,8 @@ fun OnboardingScreen(
                         Text(
                             text = "Open Inbox",
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
                         )
                     }
                 }

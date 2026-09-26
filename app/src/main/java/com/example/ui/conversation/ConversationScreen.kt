@@ -206,6 +206,7 @@ fun ConversationScreen(
                                 message = message,
                                 onRetry = { viewModel.retryMessage(message.id) },
                                 onToggleStar = { viewModel.toggleStar(message) },
+                                onSelectReaction = { emoji -> viewModel.toggleReaction(message, emoji) },
                                 onDelete = { viewModel.deleteMessage(message.id) }
                             )
                         }

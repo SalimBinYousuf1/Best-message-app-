@@ -1,12 +1,21 @@
 package com.example.ui.conversation
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,13 +41,19 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -59,11 +74,26 @@ fun ComposerDock(
     sendOnEnter: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val view = LocalView.current
+    val isDark = isSystemInDarkTheme()
+
     val (segments, remaining) = remember(text) {
         SmsTransport.calculateSmsSegments(text)
     }
 
     val canSend = text.isNotBlank()
+
+    val sendInteractionSource = remember { MutableInteractionSource() }
+    val isSendPressed by sendInteractionSource.collectIsPressedAsState()
+
+    val sendScale by animateFloatAsState(
+        targetValue = if (isSendPressed) 0.88f else (if (canSend) 1.0f else 0.92f),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "sendBtnScale"
+    )
 
     Box(
         modifier = modifier
@@ -78,11 +108,14 @@ fun ComposerDock(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Attachments button
+                // Attachments '+' button with liquid glass capsule feel
                 IconButton(
-                    onClick = onOpenAttachments,
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        onOpenAttachments()
+                    },
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(38.dp)
                         .testTag("composer_attachment_button")
                 ) {
                     Icon(
@@ -95,7 +128,10 @@ fun ComposerDock(
 
                 // Quick Templates button
                 IconButton(
-                    onClick = onOpenTemplates,
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        onOpenTemplates()
+                    },
                     modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
@@ -108,7 +144,10 @@ fun ComposerDock(
 
                 // Schedule send shortcut button
                 IconButton(
-                    onClick = onOpenSchedule,
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        onOpenSchedule()
+                    },
                     modifier = Modifier
                         .size(36.dp)
                         .testTag("composer_schedule_button")
@@ -134,7 +173,7 @@ fun ComposerDock(
                         Text(
                             text = "Text message (SMS)",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f)
                         )
                     }
 
@@ -151,7 +190,10 @@ fun ComposerDock(
                         ),
                         keyboardActions = KeyboardActions(
                             onSend = {
-                                if (canSend) onSend()
+                                if (canSend) {
+                                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                    onSend()
+                                }
                             }
                         ),
                         modifier = Modifier
@@ -160,21 +202,50 @@ fun ComposerDock(
                     )
                 }
 
-                // Send Button
+                // Apple-style circular send button
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .scale(sendScale)
+                        .size(40.dp)
+                        .shadow(
+                            elevation = if (canSend) 3.dp else 0.dp,
+                            shape = CircleShape,
+                            spotColor = if (canSend) SalimBlue.copy(alpha = 0.45f) else Color.Transparent
+                        )
                         .clip(CircleShape)
-                        .background(if (canSend) SalimBlue else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        .clickable(enabled = canSend) { onSend() }
+                        .background(
+                            if (canSend) {
+                                Brush.linearGradient(
+                                    listOf(Color(0xFF3395FF), SalimBlue, Color(0xFF0066D6))
+                                )
+                            } else {
+                                Brush.verticalGradient(
+                                    if (isDark) listOf(Color(0xFF2C3038), Color(0xFF23272F))
+                                    else listOf(Color(0xFFE2E8F0), Color(0xFFCBD5E1))
+                                )
+                            }
+                        )
+                        .border(
+                            width = 0.8.dp,
+                            color = if (canSend) Color.White.copy(alpha = 0.40f) else Color.Transparent,
+                            shape = CircleShape
+                        )
+                        .clickable(
+                            enabled = canSend,
+                            interactionSource = sendInteractionSource,
+                            indication = null
+                        ) {
+                            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            onSend()
+                        }
                         .testTag("composer_send_button"),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Send",
-                        tint = if (canSend) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                        modifier = Modifier.size(18.dp)
+                        tint = if (canSend) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                        modifier = Modifier.size(17.dp)
                     )
                 }
             }

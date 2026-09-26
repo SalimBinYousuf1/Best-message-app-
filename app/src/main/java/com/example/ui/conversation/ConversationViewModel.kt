@@ -205,6 +205,13 @@ class ConversationViewModel(
         }
     }
 
+    fun toggleReaction(message: MessageEntity, emoji: String) {
+        viewModelScope.launch {
+            val newReaction = if (message.reaction == emoji) null else emoji
+            messagingRepository.updateReaction(message.id, newReaction)
+        }
+    }
+
     fun deleteMessage(messageId: Long) {
         viewModelScope.launch {
             messagingRepository.deleteMessage(messageId)

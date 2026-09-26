@@ -55,5 +55,6 @@ data class MessageEntity(
     val attachmentName: String? = null,
     val isScheduled: Boolean = false,
     val scheduledTime: Long? = null,
-    val failureReason: String? = null
+    val failureReason: String? = null,
+    val reaction: String? = null
 )

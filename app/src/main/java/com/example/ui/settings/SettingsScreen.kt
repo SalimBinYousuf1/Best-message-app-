@@ -21,34 +21,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhoneAndroid
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Sms
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,11 +42,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.local.preferences.NotificationPrivacy
 import com.example.data.local.preferences.ThemeMode
 import com.example.telephony.DefaultSmsRoleManager
+import com.example.ui.components.LiquidGlassButton
+import com.example.ui.components.LiquidGlassButtonStyle
+import com.example.ui.components.LiquidGlassSegmentedControl
+import com.example.ui.components.LiquidGlassSlider
+import com.example.ui.components.LiquidGlassSwitch
 import com.example.ui.components.LiquidGlassTopBar
 import com.example.ui.theme.SalimBlue
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
 import com.example.ui.theme.liquidGlass
+import kotlin.math.roundToInt
 
 @Composable
 fun SettingsScreen(
@@ -109,11 +101,15 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Sms,
                                 contentDescription = null,
-                                tint = if (uiState.isDefaultSmsApp) StatusSuccess else StatusWarning
+                                tint = if (uiState.isDefaultSmsApp) StatusSuccess else StatusWarning,
+                                modifier = Modifier.size(24.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
@@ -131,21 +127,21 @@ fun SettingsScreen(
                         }
 
                         if (!uiState.isDefaultSmsApp) {
-                            Button(
+                            LiquidGlassButton(
                                 onClick = {
                                     val intent = DefaultSmsRoleManager.createDefaultSmsIntent(context)
                                     if (intent != null) defaultSmsLauncher.launch(intent)
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = SalimBlue),
-                                shape = RoundedCornerShape(10.dp)
+                                style = LiquidGlassButtonStyle.PRIMARY
                             ) {
-                                Text("Change", fontSize = 12.sp)
+                                Text("Change", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
                             }
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = "Active",
-                                tint = StatusSuccess
+                                tint = StatusSuccess,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }
@@ -166,7 +162,8 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Default.PhoneAndroid,
                             contentDescription = null,
-                            tint = SalimBlue
+                            tint = SalimBlue,
+                            modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
@@ -186,7 +183,7 @@ fun SettingsScreen(
             }
 
             // Section: Appearance
-            SettingsSectionHeader(title = "APPEARANCE")
+            SettingsSectionHeader(title = "APPEARANCE & DISPLAY")
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -200,31 +197,16 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf(
+                    LiquidGlassSegmentedControl(
+                        items = listOf(
                             ThemeMode.SYSTEM to "System",
                             ThemeMode.LIGHT to "Light",
                             ThemeMode.DARK to "Dark",
                             ThemeMode.OLED to "OLED"
-                        ).forEach { (mode, label) ->
-                            val isSelected = uiState.preferences.themeMode == mode
-                            Button(
-                                onClick = { viewModel.setThemeMode(mode) },
-                                colors = if (isSelected) {
-                                    ButtonDefaults.buttonColors(containerColor = SalimBlue)
-                                } else {
-                                    ButtonDefaults.outlinedButtonColors()
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(label, fontSize = 12.sp)
-                            }
-                        }
-                    }
+                        ),
+                        selectedItem = uiState.preferences.themeMode,
+                        onItemSelected = { viewModel.setThemeMode(it) }
+                    )
 
                     HorizontalDivider()
 
@@ -234,6 +216,62 @@ fun SettingsScreen(
                         checked = uiState.preferences.dynamicColor,
                         onCheckedChange = { viewModel.setDynamicColor(it) }
                     )
+
+                    HorizontalDivider()
+
+                    // Text Scale Slider
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Message Text Scale",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "${(uiState.preferences.bubbleTextScale * 100).roundToInt()}%",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = SalimBlue
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        LiquidGlassSlider(
+                            value = uiState.preferences.bubbleTextScale,
+                            onValueChange = { viewModel.setBubbleTextScale(it) },
+                            valueRange = 0.85f..1.35f
+                        )
+                    }
+
+                    HorizontalDivider()
+
+                    // Glass Intensity Slider
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Liquid Glass Frost",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "${(uiState.preferences.glassIntensity * 100).roundToInt()}%",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = SalimBlue
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        LiquidGlassSlider(
+                            value = uiState.preferences.glassIntensity,
+                            onValueChange = { viewModel.setGlassIntensity(it) },
+                            valueRange = 0.50f..1.0f
+                        )
+                    }
                 }
             }
 
@@ -297,30 +335,15 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf(
+                    LiquidGlassSegmentedControl(
+                        items = listOf(
                             NotificationPrivacy.SHOW_ALL to "Full",
                             NotificationPrivacy.SENDER_ONLY to "Sender",
                             NotificationPrivacy.HIDE_ALL to "Hidden"
-                        ).forEach { (privacy, label) ->
-                            val isSelected = uiState.preferences.notificationPrivacy == privacy
-                            Button(
-                                onClick = { viewModel.setNotificationPrivacy(privacy) },
-                                colors = if (isSelected) {
-                                    ButtonDefaults.buttonColors(containerColor = SalimBlue)
-                                } else {
-                                    ButtonDefaults.outlinedButtonColors()
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(label, fontSize = 12.sp)
-                            }
-                        }
-                    }
+                        ),
+                        selectedItem = uiState.preferences.notificationPrivacy,
+                        onItemSelected = { viewModel.setNotificationPrivacy(it) }
+                    )
 
                     HorizontalDivider()
 
@@ -404,13 +427,9 @@ private fun SettingsToggleRow(
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
-        Switch(
+        LiquidGlassSwitch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = androidx.compose.ui.graphics.Color.White,
-                checkedTrackColor = SalimBlue
-            )
+            onCheckedChange = onCheckedChange
         )
     }
 }

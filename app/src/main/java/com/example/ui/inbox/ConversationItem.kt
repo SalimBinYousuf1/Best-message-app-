@@ -1,6 +1,8 @@
 package com.example.ui.inbox
 
 import android.text.format.DateUtils
+import android.view.HapticFeedbackConstants
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +53,7 @@ fun ConversationItem(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val view = LocalView.current
     var showMenu by remember { mutableStateOf(false) }
 
     val formattedTime = remember(conversation.lastMessageTimestamp) {
@@ -81,8 +84,14 @@ fun ConversationItem(
                     customAlpha = if (hasUnread) 0.88f else 0.65f
                 )
                 .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = { showMenu = true }
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        onClick()
+                    },
+                    onLongClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        showMenu = true
+                    }
                 )
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically

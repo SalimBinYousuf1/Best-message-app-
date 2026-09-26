@@ -1,5 +1,6 @@
 package com.example.ui.search
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,26 +16,21 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.local.entity.ConversationEntity
 import com.example.ui.components.ContactAvatar
+import com.example.ui.components.LiquidGlassSearchBar
 import com.example.ui.components.LiquidGlassTopBar
 import com.example.ui.theme.SalimBlue
 import com.example.ui.theme.liquidGlass
@@ -63,38 +59,14 @@ fun SearchScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Box(
+            LiquidGlassSearchBar(
+                query = uiState.query,
+                onQueryChanged = { viewModel.onQueryChanged(it) },
+                placeholder = "Search messages, contacts, phone...",
                 modifier = Modifier
-                    .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .liquidGlass(shape = RoundedCornerShape(16.dp), elevation = 2.dp)
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                OutlinedTextField(
-                    value = uiState.query,
-                    onValueChange = { viewModel.onQueryChanged(it) },
-                    placeholder = { Text("Search text, name or phone number") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            tint = SalimBlue
-                        )
-                    },
-                    trailingIcon = {
-                        if (uiState.query.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.onQueryChanged("") }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear")
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("search_text_input"),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-            }
+                    .testTag("search_text_input")
+            )
 
             if (uiState.query.isBlank()) {
                 Box(
@@ -150,11 +122,15 @@ private fun SearchResultItem(
     query: String,
     onClick: () -> Unit
 ) {
+    val view = LocalView.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .liquidGlass(shape = RoundedCornerShape(16.dp), elevation = 1.dp)
-            .clickable { onClick() }
+            .clickable {
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                onClick()
+            }
             .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
