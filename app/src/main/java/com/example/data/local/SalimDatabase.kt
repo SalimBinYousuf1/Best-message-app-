@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
         ScheduledMessageEntity::class,
         QuickReplyTemplateEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class SalimDatabase : RoomDatabase() {

@@ -33,7 +33,8 @@ fun Modifier.liquidGlass(
     borderWidth: Dp = 1.dp,
     customAlpha: Float? = null
 ): Modifier {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
+    val themeMode = LocalThemeMode.current
 
     // Multi-stop liquid glass refraction gradient
     val surfaceBrush = if (isDark) {
@@ -45,13 +46,22 @@ fun Modifier.liquidGlass(
                 Color(0xFF16181D).copy(alpha = (baseAlpha + 0.14f).coerceAtMost(0.98f))
             )
         )
-    } else {
-        val baseAlpha = customAlpha ?: 0.82f
+    } else if (themeMode == com.example.data.local.preferences.ThemeMode.SALIM) {
+        val baseAlpha = customAlpha ?: 0.70f
         Brush.linearGradient(
             colors = listOf(
-                Color.White.copy(alpha = (baseAlpha + 0.10f).coerceAtMost(0.98f)),
+                Color.White.copy(alpha = (baseAlpha + 0.18f).coerceAtMost(0.94f)),
+                Color(0xFFFCFDFF).copy(alpha = baseAlpha),
+                Color(0xFFF3F7FA).copy(alpha = (baseAlpha - 0.10f).coerceAtLeast(0.45f))
+            )
+        )
+    } else {
+        val baseAlpha = customAlpha ?: 0.88f
+        Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = (baseAlpha + 0.08f).coerceAtMost(0.98f)),
                 Color(0xFFFBFDFF).copy(alpha = baseAlpha),
-                Color(0xFFF1F5F9).copy(alpha = (baseAlpha - 0.08f).coerceAtLeast(0.55f))
+                Color(0xFFF1F5F9).copy(alpha = (baseAlpha - 0.05f).coerceAtLeast(0.70f))
             )
         )
     }
@@ -123,7 +133,7 @@ fun Modifier.liquidGlassBubble(
     isOutgoing: Boolean,
     shape: Shape
 ): Modifier {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
 
     if (isOutgoing) {
         val gradient = Brush.linearGradient(

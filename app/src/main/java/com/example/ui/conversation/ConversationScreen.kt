@@ -6,6 +6,7 @@ import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -41,9 +43,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,10 +60,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.local.entity.MessageEntity
+import com.example.data.local.preferences.ThemeMode
 import com.example.ui.components.ContactAvatar
 import com.example.ui.components.DateSeparator
 import com.example.ui.components.OtpBanner
+import com.example.ui.theme.LocalThemeIsDark
+import com.example.ui.theme.LocalThemeMode
 import com.example.ui.theme.SalimBlue
+import com.example.ui.theme.SalimCanvasDark
+import com.example.ui.theme.SalimCanvasLight
+import com.example.ui.theme.SalimCanvasOled
 import com.example.ui.theme.liquidGlass
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -76,18 +86,43 @@ fun ConversationScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val draftText by viewModel.draftText.collectAsStateWithLifecycle()
 
-    val listState = rememberLazyListState()
+    val messages = uiState.messages
+    var hasInitiallyScrolledToLatest by rememberSaveable { mutableStateOf(false) }
+
+    // Position lazy list state at the latest message immediately when messages are available
+    val listState = remember(messages.isNotEmpty()) {
+        LazyListState(
+            firstVisibleItemIndex = if (messages.isNotEmpty()) messages.size - 1 else 0
+        )
+    }
+
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var showAttachmentSheet by remember { mutableStateOf(false) }
     var showTemplatesSheet by remember { mutableStateOf(false) }
     var showScheduleDialog by remember { mutableStateOf(false) }
+    var previousMessageCount by remember { mutableIntStateOf(messages.size) }
 
-    // Scroll to bottom when message list changes
-    LaunchedEffect(uiState.messages.size) {
-        if (uiState.messages.isNotEmpty()) {
-            listState.animateScrollToItem(uiState.messages.size - 1)
+    // Instant position on initial load of messages so first message is NEVER shown
+    LaunchedEffect(messages.isNotEmpty()) {
+        if (messages.isNotEmpty() && !hasInitiallyScrolledToLatest) {
+            listState.scrollToItem(messages.size - 1)
+            hasInitiallyScrolledToLatest = true
+            previousMessageCount = messages.size
+        }
+    }
+
+    // Auto-scroll when new messages arrive subsequently
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            if (hasInitiallyScrolledToLatest && messages.size > previousMessageCount) {
+                listState.animateScrollToItem(messages.size - 1)
+            } else if (!hasInitiallyScrolledToLatest) {
+                listState.scrollToItem(messages.size - 1)
+                hasInitiallyScrolledToLatest = true
+            }
+            previousMessageCount = messages.size
         }
     }
 
@@ -106,9 +141,11 @@ fun ConversationScreen(
     }
 
     val displayName = uiState.contactInfo?.name ?: uiState.conversation?.recipientName ?: uiState.conversation?.recipientAddress ?: ""
+    val themeMode = LocalThemeMode.current
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = if (themeMode == ThemeMode.SALIM) Color.Transparent else MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             ConversationTopBar(
@@ -268,6 +305,9 @@ fun ConversationScreen(
             onSelectTemplate = { templateText ->
                 viewModel.onDraftChanged(templateText)
             },
+            onSaveCustomTemplate = { title, content ->
+                viewModel.saveTemplate(title, content)
+            },
             onDismiss = { showTemplatesSheet = false }
         )
     }
@@ -292,9 +332,20 @@ private fun ConversationTopBar(
     onBackClick: () -> Unit,
     onCallClick: () -> Unit
 ) {
+    val isDark = LocalThemeIsDark.current
+    val themeMode = LocalThemeMode.current
+    val headerBaseColor = when (themeMode) {
+        ThemeMode.SALIM -> Color.Transparent
+        ThemeMode.LIGHT -> SalimCanvasLight
+        ThemeMode.OLED -> SalimCanvasOled
+        ThemeMode.DARK -> SalimCanvasDark
+        ThemeMode.SYSTEM -> if (isDark) SalimCanvasDark else SalimCanvasLight
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .background(headerBaseColor)
             .statusBarsPadding()
             .padding(horizontal = 16.dp, vertical = 6.dp)
             .liquidGlass(shape = RoundedCornerShape(22.dp), elevation = 4.dp)

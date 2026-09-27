@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface MessagingRepository {
     fun getMessagesForConversation(conversationId: Long): Flow<List<MessageEntity>>
+    suspend fun getMessagesListDirect(conversationId: Long): List<MessageEntity>
     fun getStarredMessages(): Flow<List<MessageEntity>>
     suspend fun sendMessage(
         conversationId: Long,
@@ -36,6 +37,9 @@ class MessagingRepositoryImpl(
 
     override fun getMessagesForConversation(conversationId: Long): Flow<List<MessageEntity>> =
         messageDao.getMessagesForConversation(conversationId)
+
+    override suspend fun getMessagesListDirect(conversationId: Long): List<MessageEntity> =
+        messageDao.getMessagesListDirect(conversationId)
 
     override fun getStarredMessages(): Flow<List<MessageEntity>> =
         messageDao.getStarredMessages()

@@ -14,7 +14,8 @@ enum class ThemeMode {
     SYSTEM,
     LIGHT,
     DARK,
-    OLED
+    OLED,
+    SALIM
 }
 
 enum class NotificationPrivacy {

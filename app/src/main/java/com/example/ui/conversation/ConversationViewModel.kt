@@ -17,6 +17,7 @@ import com.example.telephony.ContactInfo
 import com.example.telephony.ContactResolver
 import com.example.telephony.OtpDetectionResult
 import com.example.telephony.OtpDetector
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,6 +56,7 @@ class ConversationViewModel(
         (application as SalimApplication).templateRepository
     private val preferences = (application as SalimApplication).preferences
 
+    private val _messages = MutableStateFlow<List<MessageEntity>>(emptyList())
     private val _contactInfo = MutableStateFlow<ContactInfo?>(null)
     private val _draftText = MutableStateFlow("")
     val draftText: StateFlow<String> = _draftText.asStateFlow()
@@ -65,14 +67,23 @@ class ConversationViewModel(
 
     private var draftSaveJob: Job? = null
 
+    private val userPrefsFlow = preferences.preferencesFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, SalimUserPreferences())
+
+    private val templatesFlow = templateRepository.getAllTemplates()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val convFlow = conversationRepository.getConversationFlow(conversationId)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     val uiState: StateFlow<ConversationUiState> = combine(
-        conversationRepository.getConversationFlow(conversationId),
+        convFlow,
         _contactInfo,
-        messagingRepository.getMessagesForConversation(conversationId),
+        _messages,
         _draftText,
         _detectedOtp,
-        templateRepository.getAllTemplates(),
-        preferences.preferencesFlow,
+        templatesFlow,
+        userPrefsFlow,
         _isSending,
         _errorMessage
     ) { params ->
@@ -101,7 +112,7 @@ class ConversationViewModel(
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly,
         initialValue = ConversationUiState()
     )
 
@@ -111,6 +122,27 @@ class ConversationViewModel(
     }
 
     private fun loadConversation() {
+        // 1. Direct one-shot SQLite fetch for instant first-go load (< 5ms)
+        viewModelScope.launch(Dispatchers.IO) {
+            val directMessages = messagingRepository.getMessagesListDirect(conversationId)
+            if (directMessages.isNotEmpty()) {
+                _messages.value = directMessages
+                val latestIncoming = directMessages.lastOrNull { it.isIncoming }
+                if (latestIncoming != null) {
+                    _detectedOtp.value = OtpDetector.detectOtp(latestIncoming.body)
+                }
+            }
+
+            // 2. Stream real-time database updates
+            messagingRepository.getMessagesForConversation(conversationId).collect { list ->
+                _messages.value = list
+                val latestIncoming = list.lastOrNull { it.isIncoming }
+                if (latestIncoming != null) {
+                    _detectedOtp.value = OtpDetector.detectOtp(latestIncoming.body)
+                }
+            }
+        }
+
         viewModelScope.launch {
             val contact = ContactResolver.resolveContact(getApplication(), recipientAddress)
             _contactInfo.value = contact
@@ -118,14 +150,6 @@ class ConversationViewModel(
             val conv = conversationRepository.getConversationById(conversationId)
             if (conv != null && !conv.draftText.isNullOrBlank()) {
                 _draftText.value = conv.draftText
-            }
-
-            // Check latest incoming message for OTP
-            messagingRepository.getMessagesForConversation(conversationId).collect { list ->
-                val latestIncoming = list.lastOrNull { it.isIncoming }
-                if (latestIncoming != null) {
-                    _detectedOtp.value = OtpDetector.detectOtp(latestIncoming.body)
-                }
             }
         }
     }
@@ -220,6 +244,12 @@ class ConversationViewModel(
 
     fun dismissOtpBanner() {
         _detectedOtp.value = null
+    }
+
+    fun saveTemplate(title: String, content: String) {
+        viewModelScope.launch {
+            templateRepository.addTemplate(title, content)
+        }
     }
 
     fun clearError() {

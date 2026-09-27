@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,8 +20,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.data.local.preferences.ThemeMode
+import com.example.ui.theme.LocalThemeIsDark
+import com.example.ui.theme.LocalThemeMode
+import com.example.ui.theme.SalimCanvasDark
+import com.example.ui.theme.SalimCanvasLight
+import com.example.ui.theme.SalimCanvasOled
 import com.example.ui.theme.liquidGlass
 
 @Composable
@@ -31,9 +39,21 @@ fun LiquidGlassTopBar(
     actions: @Composable RowScope.() -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalThemeIsDark.current
+    val themeMode = LocalThemeMode.current
+
+    val headerBaseColor = when (themeMode) {
+        ThemeMode.SALIM -> Color.Transparent
+        ThemeMode.LIGHT -> SalimCanvasLight
+        ThemeMode.OLED -> SalimCanvasOled
+        ThemeMode.DARK -> SalimCanvasDark
+        ThemeMode.SYSTEM -> if (isDark) SalimCanvasDark else SalimCanvasLight
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .background(headerBaseColor)
             .statusBarsPadding()
             .padding(horizontal = 16.dp, vertical = 6.dp)
             .liquidGlass(shape = RoundedCornerShape(22.dp), elevation = 4.dp)

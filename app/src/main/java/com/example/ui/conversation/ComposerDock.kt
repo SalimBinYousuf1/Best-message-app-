@@ -15,7 +15,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.example.ui.theme.LocalThemeIsDark
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -75,7 +75,7 @@ fun ComposerDock(
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
 
     val (segments, remaining) = remember(text) {
         SmsTransport.calculateSmsSegments(text)

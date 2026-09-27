@@ -18,7 +18,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.example.ui.theme.LocalThemeIsDark
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -84,7 +84,7 @@ fun <T> LiquidGlassSegmentedControl(
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
     val selectedIndex = items.indexOfFirst { it.first == selectedItem }.coerceAtLeast(0)
 
     BoxWithConstraints(
@@ -168,7 +168,7 @@ fun <T> LiquidGlassSegmentedControl(
                         text = label,
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                            fontSize = 13.sp
+                            fontSize = if (items.size > 4) 11.5.sp else 13.sp
                         ),
                         color = if (isSelected) {
                             if (isDark) Color.White else SalimBlue
@@ -192,7 +192,7 @@ fun LiquidGlassSwitch(
     modifier: Modifier = Modifier
 ) {
     val view = LocalView.current
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
 
     // Apple switch standard dimensions
     val width = 51.dp
@@ -282,7 +282,7 @@ fun LiquidGlassButton(
     content: @Composable RowScope.() -> Unit
 ) {
     val view = LocalView.current
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
@@ -379,7 +379,7 @@ fun LiquidGlassSlider(
 ) {
     val view = LocalView.current
     val density = LocalDensity.current
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
 
     var isDragging by remember { mutableStateOf(false) }
 
@@ -483,7 +483,7 @@ fun LiquidGlassSearchBar(
     modifier: Modifier = Modifier,
     onSearchAction: (() -> Unit)? = null
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalThemeIsDark.current
 
     Box(
         modifier = modifier
