@@ -64,12 +64,7 @@ val PREDEFINED_TEMPLATES = listOf(
     QuickTemplateItem("Can't talk", "Can't talk right now. What's up?"),
     QuickTemplateItem("Call right back", "I'll call you right back."),
     QuickTemplateItem("Sounds good", "Sounds good, thanks!"),
-    QuickTemplateItem("Running late", "Running a few minutes late, see you soon."),
-    QuickTemplateItem("Sure thing", "Sure thing, see you then!"),
-    QuickTemplateItem("Check details", "Please check your messages for details."),
-    QuickTemplateItem("Thanks update", "Thanks for the update!"),
-    QuickTemplateItem("On a call", "On a call right now, will ping you in 10 mins."),
-    QuickTemplateItem("Let me know", "Let me know when you're free to chat.")
+    QuickTemplateItem("Running late", "Running a few minutes late, see you soon.")
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -103,14 +103,8 @@ fun InboxScreen(
     }
 
     LaunchedEffect(Unit) {
-        permissionsLauncher.launch(
-            arrayOf(
-                android.Manifest.permission.READ_SMS,
-                android.Manifest.permission.RECEIVE_SMS,
-                android.Manifest.permission.SEND_SMS,
-                android.Manifest.permission.READ_CONTACTS
-            )
-        )
+        viewModel.syncSms()
+        viewModel.refreshDefaultSmsStatus()
     }
 
     Scaffold(

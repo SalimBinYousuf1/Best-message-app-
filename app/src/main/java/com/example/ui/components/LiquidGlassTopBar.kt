@@ -28,7 +28,6 @@ import com.example.ui.theme.LocalThemeIsDark
 import com.example.ui.theme.LocalThemeMode
 import com.example.ui.theme.SalimCanvasDark
 import com.example.ui.theme.SalimCanvasLight
-import com.example.ui.theme.SalimCanvasOled
 import com.example.ui.theme.liquidGlass
 
 @Composable
@@ -45,7 +44,6 @@ fun LiquidGlassTopBar(
     val headerBaseColor = when (themeMode) {
         ThemeMode.SALIM -> Color.Transparent
         ThemeMode.LIGHT -> SalimCanvasLight
-        ThemeMode.OLED -> SalimCanvasOled
         ThemeMode.DARK -> SalimCanvasDark
         ThemeMode.SYSTEM -> if (isDark) SalimCanvasDark else SalimCanvasLight
     }

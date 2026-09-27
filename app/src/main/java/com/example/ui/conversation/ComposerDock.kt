@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -58,7 +59,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.local.preferences.ThemeMode
 import com.example.telephony.SmsTransport
+import com.example.ui.theme.LocalThemeMode
 import com.example.ui.theme.SalimBlue
 import com.example.ui.theme.liquidGlass
 
@@ -76,6 +79,7 @@ fun ComposerDock(
 ) {
     val view = LocalView.current
     val isDark = LocalThemeIsDark.current
+    val themeMode = LocalThemeMode.current
 
     val (segments, remaining) = remember(text) {
         SmsTransport.calculateSmsSegments(text)
@@ -98,6 +102,7 @@ fun ComposerDock(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .imePadding()
             .navigationBarsPadding()
             .padding(horizontal = 14.dp, vertical = 6.dp)
             .liquidGlass(shape = RoundedCornerShape(26.dp), elevation = 6.dp)
@@ -215,9 +220,16 @@ fun ComposerDock(
                         .clip(CircleShape)
                         .background(
                             if (canSend) {
-                                Brush.linearGradient(
-                                    listOf(Color(0xFF3395FF), SalimBlue, Color(0xFF0066D6))
-                                )
+                                when (themeMode) {
+                                    ThemeMode.LIGHT -> Brush.verticalGradient(listOf(Color(0xFF2C2C2E), Color(0xFF1C1C1E)))
+                                    ThemeMode.DARK -> Brush.verticalGradient(listOf(Color(0xFFF2F4F7), Color(0xFFE2E6EB)))
+                                    ThemeMode.SALIM -> Brush.linearGradient(listOf(Color(0xFF3395FF), SalimBlue))
+                                    ThemeMode.SYSTEM -> if (isDark) {
+                                        Brush.verticalGradient(listOf(Color(0xFFF2F4F7), Color(0xFFE2E6EB)))
+                                    } else {
+                                        Brush.verticalGradient(listOf(Color(0xFF2C2C2E), Color(0xFF1C1C1E)))
+                                    }
+                                }
                             } else {
                                 Brush.verticalGradient(
                                     if (isDark) listOf(Color(0xFF2C3038), Color(0xFF23272F))
@@ -241,10 +253,15 @@ fun ComposerDock(
                         .testTag("composer_send_button"),
                     contentAlignment = Alignment.Center
                 ) {
+                    val iconTint = if (canSend) {
+                        if (isDark && themeMode != ThemeMode.SALIM) Color(0xFF1C1C1E) else Color.White
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+                    }
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Send",
-                        tint = if (canSend) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                        tint = iconTint,
                         modifier = Modifier.size(17.dp)
                     )
                 }

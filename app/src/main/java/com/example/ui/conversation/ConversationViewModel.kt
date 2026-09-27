@@ -61,6 +61,9 @@ class ConversationViewModel(
     private val _draftText = MutableStateFlow("")
     val draftText: StateFlow<String> = _draftText.asStateFlow()
 
+    private val _isInitialLoadDone = MutableStateFlow(false)
+    val isInitialLoadDone: StateFlow<Boolean> = _isInitialLoadDone.asStateFlow()
+
     private val _detectedOtp = MutableStateFlow<OtpDetectionResult?>(null)
     private val _isSending = MutableStateFlow(false)
     private val _errorMessage = MutableStateFlow<String?>(null)
@@ -125,13 +128,12 @@ class ConversationViewModel(
         // 1. Direct one-shot SQLite fetch for instant first-go load (< 5ms)
         viewModelScope.launch(Dispatchers.IO) {
             val directMessages = messagingRepository.getMessagesListDirect(conversationId)
-            if (directMessages.isNotEmpty()) {
-                _messages.value = directMessages
-                val latestIncoming = directMessages.lastOrNull { it.isIncoming }
-                if (latestIncoming != null) {
-                    _detectedOtp.value = OtpDetector.detectOtp(latestIncoming.body)
-                }
+            _messages.value = directMessages
+            val latestIncoming = directMessages.lastOrNull { it.isIncoming }
+            if (latestIncoming != null) {
+                _detectedOtp.value = OtpDetector.detectOtp(latestIncoming.body)
             }
+            _isInitialLoadDone.value = true
 
             // 2. Stream real-time database updates
             messagingRepository.getMessagesForConversation(conversationId).collect { list ->

@@ -172,7 +172,7 @@ private fun ScheduledMessageCard(
 
             Text(
                 text = item.body,
-                style = MaterialTheme.typography.bodyMedium,
+                style = com.example.ui.theme.MessageBodyStyle,
                 color = MaterialTheme.colorScheme.onSurface
             )
 

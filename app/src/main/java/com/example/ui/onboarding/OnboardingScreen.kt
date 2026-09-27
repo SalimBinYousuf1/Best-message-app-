@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.telephony.DefaultSmsRoleManager
+import com.example.telephony.PermissionManager
 import com.example.ui.components.LiquidGlassButton
 import com.example.ui.components.LiquidGlassButtonStyle
 import com.example.ui.theme.SalimBlue
@@ -56,17 +57,26 @@ fun OnboardingScreen(
 ) {
     val context = LocalContext.current
     var isDefaultSms by remember { mutableStateOf(DefaultSmsRoleManager.isDefaultSmsApp(context)) }
+    var permissionsRequested by remember { mutableStateOf(false) }
 
     val defaultSmsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
+    ) {
         isDefaultSms = DefaultSmsRoleManager.isDefaultSmsApp(context)
     }
 
     val permissionsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) {
-        // Proceed regardless of choice
+    ) { results ->
+        permissionsRequested = true
+        results.forEach { (perm, granted) ->
+            PermissionManager.recordPermissionState(context, perm, granted)
+        }
+    }
+
+    fun completeAndProceed() {
+        PermissionManager.setOnboardingCompleted(context, true)
+        onCompleteOnboarding()
     }
 
     Box(
@@ -180,7 +190,7 @@ fun OnboardingScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     LiquidGlassButton(
-                        onClick = onCompleteOnboarding,
+                        onClick = { completeAndProceed() },
                         style = LiquidGlassButtonStyle.SECONDARY,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier
@@ -191,7 +201,7 @@ fun OnboardingScreen(
                     }
                 } else {
                     LiquidGlassButton(
-                        onClick = onCompleteOnboarding,
+                        onClick = { completeAndProceed() },
                         style = LiquidGlassButtonStyle.PRIMARY,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier

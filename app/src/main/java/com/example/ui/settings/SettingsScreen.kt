@@ -202,7 +202,6 @@ fun SettingsScreen(
                             ThemeMode.SYSTEM to "System",
                             ThemeMode.LIGHT to "Light",
                             ThemeMode.DARK to "Dark",
-                            ThemeMode.OLED to "OLED",
                             ThemeMode.SALIM to "Salim"
                         ),
                         selectedItem = uiState.preferences.themeMode,

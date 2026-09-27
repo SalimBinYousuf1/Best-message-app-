@@ -61,24 +61,6 @@ private val DarkColorScheme = darkColorScheme(
     onError = Color.White
 )
 
-private val OledColorScheme = darkColorScheme(
-    primary = SalimBlueLight,
-    onPrimary = Color.Black,
-    primaryContainer = Color(0xFF003D80),
-    onPrimaryContainer = Color(0xFFCCE4FF),
-    secondary = Color(0xFF8899A6),
-    onSecondary = Color.Black,
-    background = SalimCanvasOled,
-    onBackground = Color.White,
-    surface = Color(0xFF0E0F12),
-    onSurface = Color.White,
-    surfaceVariant = Color(0xFF16181D),
-    onSurfaceVariant = Color(0xFFA0AAB5),
-    outline = Color(0xFF2A2D35),
-    error = StatusError,
-    onError = Color.White
-)
-
 /**
  * 4th Theme: Salim ASGL translucent liquid glass color scheme
  */
@@ -110,7 +92,7 @@ fun SalimTheme(
     val isDark = when (themeMode) {
         ThemeMode.SYSTEM -> systemInDark
         ThemeMode.LIGHT -> false
-        ThemeMode.DARK, ThemeMode.OLED -> true
+        ThemeMode.DARK -> true
         ThemeMode.SALIM -> false
     }
 
@@ -120,7 +102,6 @@ fun SalimTheme(
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        themeMode == ThemeMode.OLED -> OledColorScheme
         isDark -> DarkColorScheme
         else -> LightColorScheme
     }
@@ -136,7 +117,6 @@ fun SalimTheme(
                 val windowBgColor = when (themeMode) {
                     ThemeMode.LIGHT -> android.graphics.Color.parseColor("#F6F8FA")
                     ThemeMode.SALIM -> android.graphics.Color.parseColor("#FAFBFC")
-                    ThemeMode.OLED -> android.graphics.Color.BLACK
                     ThemeMode.DARK -> android.graphics.Color.parseColor("#111317")
                     ThemeMode.SYSTEM -> if (isDark) android.graphics.Color.parseColor("#111317") else android.graphics.Color.parseColor("#F6F8FA")
                 }

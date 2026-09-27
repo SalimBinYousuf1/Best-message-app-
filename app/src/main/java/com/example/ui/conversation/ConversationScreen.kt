@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,7 +70,6 @@ import com.example.ui.theme.LocalThemeMode
 import com.example.ui.theme.SalimBlue
 import com.example.ui.theme.SalimCanvasDark
 import com.example.ui.theme.SalimCanvasLight
-import com.example.ui.theme.SalimCanvasOled
 import com.example.ui.theme.liquidGlass
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -85,12 +85,12 @@ fun ConversationScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val draftText by viewModel.draftText.collectAsStateWithLifecycle()
+    val isInitialLoadDone by viewModel.isInitialLoadDone.collectAsStateWithLifecycle()
 
     val messages = uiState.messages
-    var hasInitiallyScrolledToLatest by rememberSaveable { mutableStateOf(false) }
 
-    // Position lazy list state at the latest message immediately when messages are available
-    val listState = remember(messages.isNotEmpty()) {
+    // Direct, non-animated initial positioning strictly at the latest message
+    val listState = remember(isInitialLoadDone && messages.isNotEmpty()) {
         LazyListState(
             firstVisibleItemIndex = if (messages.isNotEmpty()) messages.size - 1 else 0
         )
@@ -102,28 +102,34 @@ fun ConversationScreen(
     var showAttachmentSheet by remember { mutableStateOf(false) }
     var showTemplatesSheet by remember { mutableStateOf(false) }
     var showScheduleDialog by remember { mutableStateOf(false) }
-    var previousMessageCount by remember { mutableIntStateOf(messages.size) }
+    var previousMessageCount by rememberSaveable { mutableIntStateOf(0) }
 
-    // Instant position on initial load of messages so first message is NEVER shown
-    LaunchedEffect(messages.isNotEmpty()) {
-        if (messages.isNotEmpty() && !hasInitiallyScrolledToLatest) {
-            listState.scrollToItem(messages.size - 1)
-            hasInitiallyScrolledToLatest = true
-            previousMessageCount = messages.size
+    // Detect if user is at the latest message
+    val isAtLatestMessage by remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val total = layoutInfo.totalItemsCount
+            if (total == 0) return@derivedStateOf true
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            lastVisible >= total - 1
         }
     }
 
-    // Auto-scroll when new messages arrive subsequently
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            if (hasInitiallyScrolledToLatest && messages.size > previousMessageCount) {
-                listState.animateScrollToItem(messages.size - 1)
-            } else if (!hasInitiallyScrolledToLatest) {
-                listState.scrollToItem(messages.size - 1)
-                hasInitiallyScrolledToLatest = true
-            }
-            previousMessageCount = messages.size
+    // Scroll-to-latest button visible only when scrolled away from bottom
+    val showScrollToLatest by remember {
+        derivedStateOf {
+            !isAtLatestMessage && messages.isNotEmpty()
         }
+    }
+
+    // New message arrival: auto-scroll only if user was already at the latest message
+    LaunchedEffect(messages.size) {
+        if (previousMessageCount > 0 && messages.size > previousMessageCount) {
+            if (isAtLatestMessage) {
+                listState.animateScrollToItem(messages.size - 1)
+            }
+        }
+        previousMessageCount = messages.size
     }
 
     // Show error snackbar if error occurs
@@ -131,12 +137,6 @@ fun ConversationScreen(
         uiState.errorMessage?.let { error ->
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
-        }
-    }
-
-    val showScrollToBottom by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex < uiState.messages.size - 5
         }
     }
 
@@ -251,31 +251,32 @@ fun ConversationScreen(
                 }
             }
 
-            // Scroll to bottom floating button
+            // Apple-style Scroll to Latest floating glass button
             AnimatedVisibility(
-                visible = showScrollToBottom,
-                enter = fadeIn(),
-                exit = fadeOut(),
+                visible = showScrollToLatest,
+                enter = fadeIn() + androidx.compose.animation.scaleIn(initialScale = 0.82f),
+                exit = fadeOut() + androidx.compose.animation.scaleOut(targetScale = 0.82f),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 8.dp)
+                    .padding(end = 16.dp, bottom = 12.dp)
             ) {
-                FloatingActionButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            if (uiState.messages.isNotEmpty()) {
-                                listState.animateScrollToItem(uiState.messages.size - 1)
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .liquidGlass(shape = CircleShape, elevation = 4.dp)
+                        .clickable {
+                            coroutineScope.launch {
+                                if (uiState.messages.isNotEmpty()) {
+                                    listState.animateScrollToItem(uiState.messages.size - 1)
+                                }
                             }
-                        }
-                    },
-                    modifier = Modifier.size(40.dp),
-                    shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = SalimBlue
+                        },
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Scroll to bottom",
+                        contentDescription = "Scroll to latest message",
+                        tint = SalimBlue,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -287,10 +288,10 @@ fun ConversationScreen(
     if (showAttachmentSheet) {
         AttachmentBottomSheet(
             onDismiss = { showAttachmentSheet = false },
-            onAttachmentSelected = { uri, type, name ->
+            onAttachmentSelected = { uriString, type, name ->
                 viewModel.sendMessage(
                     body = draftText,
-                    attachmentUri = uri.toString(),
+                    attachmentUri = uriString,
                     attachmentType = type,
                     attachmentName = name
                 )
@@ -337,7 +338,6 @@ private fun ConversationTopBar(
     val headerBaseColor = when (themeMode) {
         ThemeMode.SALIM -> Color.Transparent
         ThemeMode.LIGHT -> SalimCanvasLight
-        ThemeMode.OLED -> SalimCanvasOled
         ThemeMode.DARK -> SalimCanvasDark
         ThemeMode.SYSTEM -> if (isDark) SalimCanvasDark else SalimCanvasLight
     }

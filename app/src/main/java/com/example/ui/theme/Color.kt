@@ -5,7 +5,6 @@ import androidx.compose.ui.graphics.Color
 // Canvas backgrounds
 val SalimCanvasLight = Color(0xFFF6F8FA)
 val SalimCanvasDark = Color(0xFF111317)
-val SalimCanvasOled = Color(0xFF000000)
 
 // Glass surfaces
 val SalimGlassLight = Color(0xCCFFFFFF)
@@ -18,10 +17,14 @@ val SalimBlue = Color(0xFF007AFF)
 val SalimBlueLight = Color(0xFF3395FF)
 val SalimBlueDark = Color(0xFF0062CC)
 
-// Bubbles
-val BubbleOutgoing = Color(0xFF007AFF)
-val BubbleIncomingLight = Color(0xFFE9EDF2)
-val BubbleIncomingDark = Color(0xFF23272F)
+// Apple-style Neutral Message Bubbles (No blue bubbles)
+val BubbleOutgoingLight = Color(0xFF2C2C2E)
+val BubbleOutgoingDark = Color(0xFF3A3A3C)
+val BubbleOutgoingSalim = Color(0xE6252932)
+
+val BubbleIncomingLight = Color(0xFFE9E9EB)
+val BubbleIncomingDark = Color(0xFF262629)
+val BubbleIncomingSalim = Color(0xD9FFFFFF)
 
 // Text tokens
 val TextPrimaryLight = Color(0xFF0F172A)

@@ -149,7 +149,7 @@ private fun SearchResultItem(
                 if (!conversation.lastMessageText.isNullOrBlank()) {
                     Text(
                         text = conversation.lastMessageText,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = com.example.ui.theme.MessagePreviewStyle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2
                     )

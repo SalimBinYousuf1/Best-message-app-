@@ -182,7 +182,7 @@ fun MessageBubble(
                         if (message.body.isNotBlank()) {
                             Text(
                                 text = message.body,
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = com.example.ui.theme.MessageBodyStyle,
                                 color = if (isOutgoing) Color.White else MaterialTheme.colorScheme.onSurface
                             )
                         }

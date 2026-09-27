@@ -151,6 +151,9 @@ fun ScheduleMessageDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurface,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(

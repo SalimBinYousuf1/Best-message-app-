@@ -35,6 +35,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.example.data.local.AttachmentStorageManager
+import kotlinx.coroutines.launch
 import com.example.data.local.entity.AttachmentType
 import com.example.ui.theme.SalimBlue
 import com.example.ui.theme.liquidGlass
@@ -43,27 +47,37 @@ import com.example.ui.theme.liquidGlass
 @Composable
 fun AttachmentBottomSheet(
     onDismiss: () -> Unit,
-    onAttachmentSelected: (Uri, AttachmentType, String) -> Unit
+    onAttachmentSelected: (String, AttachmentType, String) -> Unit
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState()
 
-    // Android Zero-permission Photo Picker
+    // Android Zero-permission Photo Picker with automatic durable internal persistence
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
-            onAttachmentSelected(uri, AttachmentType.IMAGE, "Photo")
-            onDismiss()
+            coroutineScope.launch {
+                val persistentPath = AttachmentStorageManager.persistAttachment(context, uri, "jpg")
+                val target = persistentPath ?: uri.toString()
+                onAttachmentSelected(target, AttachmentType.IMAGE, "Photo")
+                onDismiss()
+            }
         }
     }
 
-    // Document Picker
+    // Document Picker with durable internal persistence
     val docPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            onAttachmentSelected(uri, AttachmentType.DOCUMENT, "Document")
-            onDismiss()
+            coroutineScope.launch {
+                val persistentPath = AttachmentStorageManager.persistAttachment(context, uri, "bin")
+                val target = persistentPath ?: uri.toString()
+                onAttachmentSelected(target, AttachmentType.DOCUMENT, "Document")
+                onDismiss()
+            }
         }
     }
 

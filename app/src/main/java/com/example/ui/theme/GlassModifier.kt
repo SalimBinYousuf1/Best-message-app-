@@ -134,59 +134,132 @@ fun Modifier.liquidGlassBubble(
     shape: Shape
 ): Modifier {
     val isDark = LocalThemeIsDark.current
+    val themeMode = LocalThemeMode.current
 
     if (isOutgoing) {
-        val gradient = Brush.linearGradient(
-            colors = listOf(
-                Color(0xFF3395FF),
-                Color(0xFF007AFF),
-                Color(0xFF0066D6)
-            )
-        )
+        val bubbleBrush = when (themeMode) {
+            com.example.data.local.preferences.ThemeMode.SALIM -> {
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xF02C3038),
+                        Color(0xE622262E)
+                    )
+                )
+            }
+            com.example.data.local.preferences.ThemeMode.LIGHT -> {
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF2C2C2E),
+                        Color(0xFF1F1F21)
+                    )
+                )
+            }
+            com.example.data.local.preferences.ThemeMode.DARK -> {
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF3A3A3C),
+                        Color(0xFF2E2E31)
+                    )
+                )
+            }
+            com.example.data.local.preferences.ThemeMode.SYSTEM -> {
+                if (isDark) {
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF3A3A3C),
+                            Color(0xFF2E2E31)
+                        )
+                    )
+                } else {
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF2C2C2E),
+                            Color(0xFF1F1F21)
+                        )
+                    )
+                }
+            }
+        }
+
         val borderBrush = Brush.verticalGradient(
             colors = listOf(
-                Color.White.copy(alpha = 0.50f),
-                Color.White.copy(alpha = 0.18f)
+                Color.White.copy(alpha = 0.28f),
+                Color.White.copy(alpha = 0.08f),
+                Color.Transparent
             )
         )
+
         return this
             .shadow(
-                elevation = 2.dp,
+                elevation = 1.5.dp,
                 shape = shape,
-                spotColor = SalimBlue.copy(alpha = 0.35f)
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.5f else 0.25f)
             )
             .clip(shape)
-            .background(gradient, shape)
-            .border(width = 0.8.dp, brush = borderBrush, shape = shape)
+            .background(bubbleBrush, shape)
+            .border(width = 0.75.dp, brush = borderBrush, shape = shape)
     } else {
-        val bubbleBrush = if (isDark) {
-            Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFF2C313B).copy(alpha = 0.95f),
-                    Color(0xFF22262E).copy(alpha = 0.95f)
+        val bubbleBrush = when (themeMode) {
+            com.example.data.local.preferences.ThemeMode.SALIM -> {
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.94f),
+                        Color(0xFFF3F6F9).copy(alpha = 0.88f)
+                    )
                 )
-            )
-        } else {
-            Brush.verticalGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = 0.98f),
-                    Color(0xFFECEFF3).copy(alpha = 0.98f)
+            }
+            com.example.data.local.preferences.ThemeMode.LIGHT -> {
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFE9E9EB),
+                        Color(0xFFE2E2E5)
+                    )
                 )
-            )
+            }
+            com.example.data.local.preferences.ThemeMode.DARK -> {
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF262629),
+                        Color(0xFF1F1F22)
+                    )
+                )
+            }
+            com.example.data.local.preferences.ThemeMode.SYSTEM -> {
+                if (isDark) {
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF262629),
+                            Color(0xFF1F1F22)
+                        )
+                    )
+                } else {
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFFE9E9EB),
+                            Color(0xFFE2E2E5)
+                        )
+                    )
+                }
+            }
         }
 
         val borderBrush = Brush.verticalGradient(
             colors = if (isDark) {
-                listOf(Color.White.copy(alpha = 0.22f), Color.White.copy(alpha = 0.06f))
+                listOf(Color.White.copy(alpha = 0.16f), Color.White.copy(alpha = 0.04f))
             } else {
-                listOf(Color.White.copy(alpha = 0.98f), Color(0xFFDDE3EA).copy(alpha = 0.70f))
+                listOf(Color.White.copy(alpha = 0.85f), Color(0xFFD1D1D6).copy(alpha = 0.55f))
             }
         )
+
         return this
-            .shadow(elevation = 1.dp, shape = shape)
+            .shadow(
+                elevation = 1.dp,
+                shape = shape,
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.35f else 0.08f)
+            )
             .clip(shape)
             .background(bubbleBrush, shape)
-            .border(width = 0.8.dp, brush = borderBrush, shape = shape)
+            .border(width = 0.75.dp, brush = borderBrush, shape = shape)
     }
 }
 

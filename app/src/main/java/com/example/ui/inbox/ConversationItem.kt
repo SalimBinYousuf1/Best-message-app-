@@ -146,8 +146,8 @@ fun ConversationItem(
 
                     Text(
                         text = previewText,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = if (hasUnread) FontWeight.Medium else FontWeight.Normal
+                        style = com.example.ui.theme.MessagePreviewStyle.copy(
+                            fontWeight = if (hasUnread) FontWeight.SemiBold else FontWeight.Normal
                         ),
                         color = if (!conversation.draftText.isNullOrBlank()) {
                             SalimBlue

@@ -16,6 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.data.local.preferences.SalimPreferences
 import com.example.data.local.preferences.SalimUserPreferences
 import com.example.telephony.ContactResolver
+import com.example.telephony.PermissionManager
 import com.example.ui.navigation.SalimNavGraph
 import com.example.ui.navigation.Screen
 import com.example.ui.theme.SalimTheme
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         preferences = (application as SalimApplication).preferences
+        val initialOnboardingDone = PermissionManager.isOnboardingCompleted(this)
 
         setContent {
             val userPrefs by preferences.preferencesFlow.collectAsStateWithLifecycle(
@@ -41,7 +43,7 @@ class MainActivity : ComponentActivity() {
                 dynamicColor = userPrefs.dynamicColor
             ) {
                 val navController = rememberNavController()
-                val startDestination = if (userPrefs.hasCompletedOnboarding) {
+                val startDestination = if (initialOnboardingDone || userPrefs.hasCompletedOnboarding) {
                     Screen.Inbox.route
                 } else {
                     Screen.Onboarding.route
@@ -58,6 +60,7 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     startDestination = startDestination,
                     onCompleteOnboarding = {
+                        PermissionManager.setOnboardingCompleted(this@MainActivity, true)
                         lifecycleScope.launch {
                             preferences.setHasCompletedOnboarding(true)
                         }
