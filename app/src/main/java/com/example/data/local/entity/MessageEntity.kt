@@ -17,7 +17,9 @@ enum class AttachmentType {
     NONE,
     IMAGE,
     AUDIO,
-    DOCUMENT
+    DOCUMENT,
+    LOCATION,
+    CONTACT
 }
 
 @Entity(

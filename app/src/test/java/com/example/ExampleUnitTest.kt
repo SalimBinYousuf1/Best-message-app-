@@ -16,6 +16,9 @@ class ExampleUnitTest {
         assertEquals("5551234567", ContactResolver.normalizePhoneNumber("(555) 123-4567"))
         assertEquals("+447911123456", ContactResolver.normalizePhoneNumber(" +44 7911 123456 "))
         assertEquals("911", ContactResolver.normalizePhoneNumber("911"))
+        assertEquals("GOOGLE", ContactResolver.normalizePhoneNumber("GOOGLE"))
+        assertEquals("VM-HDFCBK", ContactResolver.normalizePhoneNumber("VM-HDFCBK"))
+        assertEquals("AMAZON", ContactResolver.normalizePhoneNumber("AMAZON"))
     }
 
     @Test

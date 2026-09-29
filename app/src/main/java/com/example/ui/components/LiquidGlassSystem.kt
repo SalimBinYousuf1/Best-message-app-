@@ -13,11 +13,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -32,34 +29,38 @@ import kotlin.math.sin
 @Composable
 fun SalimShaderBackground(
     modifier: Modifier = Modifier,
-    speedMultiplier: Float = 0.40f, // Exact ASGL but little less speed as requested
+    speedMultiplier: Float = 0.40f,
     content: @Composable () -> Unit
+) {
+    Box(modifier = modifier.fillMaxSize()) {
+        ShaderBackdropLayer(speedMultiplier = speedMultiplier)
+        content()
+    }
+}
+
+@Composable
+private fun ShaderBackdropLayer(
+    speedMultiplier: Float
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val shader = remember { RuntimeShader(ASGL_SHADER) }
-        val time by produceState(initialValue = 0f) {
-            val startNanos = System.nanoTime()
-            while (true) {
-                withFrameNanos { currentNanos ->
-                    val elapsedSeconds = (currentNanos - startNanos) / 1_000_000_000f
-                    value = elapsedSeconds * speedMultiplier
-                }
-            }
-        }
+        val infiniteTransition = rememberInfiniteTransition(label = "ShaderTimeTransition")
+        val animatedTime by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 100f * speedMultiplier,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = (100000 / speedMultiplier.coerceAtLeast(0.1f)).toInt(), easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "ShaderTime"
+        )
 
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .drawWithCache {
-                    shader.setFloatUniform("resolution", size.width, size.height)
-                    shader.setFloatUniform("time", time)
-                    val brush = ShaderBrush(shader)
-                    onDrawBehind {
-                        drawRect(brush = brush)
-                    }
-                }
+        androidx.compose.foundation.Canvas(
+            modifier = Modifier.fillMaxSize()
         ) {
-            content()
+            shader.setFloatUniform("resolution", size.width, size.height)
+            shader.setFloatUniform("time", animatedTime)
+            drawRect(brush = ShaderBrush(shader))
         }
     } else {
         // Fallback for API < 33: Animated fluid gradient simulating the red, blue, green, and yellow clouds
@@ -74,10 +75,7 @@ fun SalimShaderBackground(
             label = "CloudPhase"
         )
 
-        Box(
-            modifier = modifier.fillMaxSize()
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
                 // Base luminous background
                 drawRect(Color(0xFFFAFBFC))
 
@@ -140,10 +138,8 @@ fun SalimShaderBackground(
                     radius = radius
                 )
             }
-            content()
         }
     }
-}
 
 private const val ASGL_SHADER = """
 uniform float2 resolution;

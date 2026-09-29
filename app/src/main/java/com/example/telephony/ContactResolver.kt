@@ -21,9 +21,14 @@ object ContactResolver {
     fun normalizePhoneNumber(number: String): String {
         val trimmed = number.trim()
         if (trimmed.isEmpty()) return ""
-        // Keep leading '+' if present, strip all spaces, dashes, parentheses, dots
+        // If it contains letters (business alphanumeric sender like "GOOGLE", "VK-SBI", "HDFCBK", "AMAZON"), preserve it as-is
+        if (trimmed.any { it.isLetter() }) {
+            return trimmed
+        }
+        // Numeric phone number
         val hasPlus = trimmed.startsWith("+")
         val digitsOnly = trimmed.filter { it.isDigit() }
+        if (digitsOnly.isEmpty()) return trimmed
         return if (hasPlus) "+$digitsOnly" else digitsOnly
     }
 
@@ -35,6 +40,9 @@ object ContactResolver {
         if (normalized.isEmpty()) {
             return@withContext ContactInfo(name = null, photoUri = null, normalizedNumber = rawNumber)
         }
+
+        // If it is an alphanumeric business name, use it directly as the display name if no contact exists
+        val isBusinessOrSenderId = rawNumber.any { it.isLetter() }
 
         try {
             val uri = Uri.withAppendedPath(
@@ -52,7 +60,7 @@ object ContactResolver {
                     val photoIndex = cursor.getColumnIndex(ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI)
                     val name = if (nameIndex >= 0) cursor.getString(nameIndex) else null
                     val photo = if (photoIndex >= 0) cursor.getString(photoIndex) else null
-                    return@withContext ContactInfo(name = name, photoUri = photo, normalizedNumber = normalized)
+                    return@withContext ContactInfo(name = name ?: (if (isBusinessOrSenderId) rawNumber else null), photoUri = photo, normalizedNumber = normalized)
                 }
             }
         } catch (_: SecurityException) {
@@ -61,7 +69,11 @@ object ContactResolver {
             // Ignore failure and fallback
         }
 
-        return@withContext ContactInfo(name = null, photoUri = null, normalizedNumber = normalized)
+        return@withContext ContactInfo(
+            name = if (isBusinessOrSenderId) rawNumber else null,
+            photoUri = null,
+            normalizedNumber = normalized
+        )
     }
 
     /**

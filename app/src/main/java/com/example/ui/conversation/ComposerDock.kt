@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -104,13 +105,16 @@ fun ComposerDock(
             .fillMaxWidth()
             .imePadding()
             .navigationBarsPadding()
-            .padding(horizontal = 14.dp, vertical = 6.dp)
-            .liquidGlass(shape = RoundedCornerShape(26.dp), elevation = 6.dp)
-            .padding(horizontal = 6.dp, vertical = 6.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .liquidGlass(shape = RoundedCornerShape(28.dp), elevation = 6.dp)
+            .defaultMinSize(minHeight = 58.dp)
+            .padding(horizontal = 8.dp, vertical = 8.dp)
     ) {
         Column {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = 46.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Attachments '+' button with liquid glass capsule feel
@@ -120,7 +124,7 @@ fun ComposerDock(
                         onOpenAttachments()
                     },
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(40.dp)
                         .testTag("composer_attachment_button")
                 ) {
                     Icon(
@@ -137,13 +141,13 @@ fun ComposerDock(
                         view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                         onOpenTemplates()
                     },
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.TextSnippet,
                         contentDescription = "Quick templates",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
@@ -154,30 +158,31 @@ fun ComposerDock(
                         onOpenSchedule()
                     },
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(38.dp)
                         .testTag("composer_schedule_button")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Schedule,
                         contentDescription = "Schedule SMS",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
                 // Text input area
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 6.dp, vertical = 6.dp),
+                        .defaultMinSize(minHeight = 44.dp)
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
                     if (text.isEmpty()) {
                         Text(
                             text = "Text message (SMS)",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f)
                         )
                     }
@@ -186,9 +191,11 @@ fun ComposerDock(
                         value = text,
                         onValueChange = onTextChanged,
                         textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 16.sp
                         ),
                         cursorBrush = SolidColor(SalimBlue),
+                        maxLines = 6,
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Sentences,
                             imeAction = if (sendOnEnter) ImeAction.Send else ImeAction.Default
@@ -207,11 +214,13 @@ fun ComposerDock(
                     )
                 }
 
+                Spacer(modifier = Modifier.width(4.dp))
+
                 // Apple-style circular send button
                 Box(
                     modifier = Modifier
                         .scale(sendScale)
-                        .size(40.dp)
+                        .size(42.dp)
                         .shadow(
                             elevation = if (canSend) 3.dp else 0.dp,
                             shape = CircleShape,

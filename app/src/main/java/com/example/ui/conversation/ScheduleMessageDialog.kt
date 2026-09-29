@@ -31,12 +31,16 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -61,6 +65,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleMessageDialog(
     initialText: String,
@@ -82,42 +87,32 @@ fun ScheduleMessageDialog(
 
     var selectedPresetIndex by remember { mutableIntStateOf(0) }
 
-    // Custom calendar and flipper states initialized to now + 30 mins
+    // Custom calendar and clock states initialized to now + 30 mins
     val initialCal = remember {
         Calendar.getInstance().apply { add(Calendar.MINUTE, 30) }
     }
 
-    var calendarMonthOffset by remember { mutableIntStateOf(0) } // month navigation from current
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialCal.get(Calendar.HOUR_OF_DAY),
+        initialMinute = initialCal.get(Calendar.MINUTE),
+        is24Hour = false
+    )
+
+    var calendarMonthOffset by remember { mutableIntStateOf(0) }
     var selectedYear by remember { mutableIntStateOf(initialCal.get(Calendar.YEAR)) }
     var selectedMonth by remember { mutableIntStateOf(initialCal.get(Calendar.MONTH)) }
     var selectedDay by remember { mutableIntStateOf(initialCal.get(Calendar.DAY_OF_MONTH)) }
 
-    // Time Flipper states: HH (1..12), mm (0..59), ss (0..59), am/pm ("AM", "PM")
-    var selectedHour12 by remember {
-        val raw = initialCal.get(Calendar.HOUR)
-        mutableIntStateOf(if (raw == 0) 12 else raw)
-    }
-    var selectedMinute by remember { mutableIntStateOf(initialCal.get(Calendar.MINUTE)) }
-    var selectedSecond by remember { mutableIntStateOf(0) }
-    var selectedAmPm by remember {
-        mutableStateOf(if (initialCal.get(Calendar.AM_PM) == Calendar.PM) "PM" else "AM")
-    }
-
-    // Calculated target timestamp
+    // Calculated target timestamp using the Clock TimePicker state
     val customTimestamp by remember {
         derivedStateOf {
             val cal = Calendar.getInstance().apply {
                 set(Calendar.YEAR, selectedYear)
                 set(Calendar.MONTH, selectedMonth)
                 set(Calendar.DAY_OF_MONTH, selectedDay)
-
-                var hour24 = selectedHour12 % 12
-                if (selectedAmPm == "PM") {
-                    hour24 += 12
-                }
-                set(Calendar.HOUR_OF_DAY, hour24)
-                set(Calendar.MINUTE, selectedMinute)
-                set(Calendar.SECOND, selectedSecond)
+                set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                set(Calendar.MINUTE, timePickerState.minute)
+                set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }
             cal.timeInMillis
@@ -297,9 +292,9 @@ fun ScheduleMessageDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // TIME FLIPPER: HH mm ss (am/pm) 100% WORKING
+                    // INTERACTIVE CLOCK
                     Text(
-                        text = "TIME FLIPPER (HH : mm : ss)",
+                        text = "DISPATCH CLOCK TIME",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -312,17 +307,22 @@ fun ScheduleMessageDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .liquidGlass(shape = RoundedCornerShape(16.dp), elevation = 2.dp)
-                            .padding(horizontal = 8.dp, vertical = 12.dp)
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        TimeFlipper(
-                            hour = selectedHour12,
-                            minute = selectedMinute,
-                            second = selectedSecond,
-                            amPm = selectedAmPm,
-                            onHourChange = { selectedHour12 = it },
-                            onMinuteChange = { selectedMinute = it },
-                            onSecondChange = { selectedSecond = it },
-                            onAmPmChange = { selectedAmPm = it }
+                        TimePicker(
+                            state = timePickerState,
+                            colors = TimePickerDefaults.colors(
+                                clockDialColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                clockDialSelectedContentColor = Color.White,
+                                clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurface,
+                                selectorColor = SalimBlue,
+                                periodSelectorBorderColor = SalimBlue,
+                                periodSelectorSelectedContainerColor = SalimBlue,
+                                periodSelectorSelectedContentColor = Color.White,
+                                timeSelectorSelectedContainerColor = SalimBlue.copy(alpha = 0.2f),
+                                timeSelectorSelectedContentColor = SalimBlue
+                            )
                         )
                     }
                 }
@@ -539,200 +539,6 @@ private fun AppleMinimalistCalendar(
                     }
                 }
             }
-        }
-    }
-}
-
-/**
- * Apple-style Time Flipper Wheel for HH, mm, ss, and AM/PM.
- * 100% interactive, supports step clicking and continuous adjustments.
- */
-@Composable
-private fun TimeFlipper(
-    hour: Int,
-    minute: Int,
-    second: Int,
-    amPm: String,
-    onHourChange: (Int) -> Unit,
-    onMinuteChange: (Int) -> Unit,
-    onSecondChange: (Int) -> Unit,
-    onAmPmChange: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // HH Column
-        FlipperWheelColumn(
-            label = "HOUR",
-            value = String.format(Locale.US, "%02d", hour),
-            onIncrement = {
-                val next = if (hour >= 12) 1 else hour + 1
-                onHourChange(next)
-            },
-            onDecrement = {
-                val prev = if (hour <= 1) 12 else hour - 1
-                onHourChange(prev)
-            }
-        )
-
-        Text(
-            text = ":",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 14.dp)
-        )
-
-        // mm Column
-        FlipperWheelColumn(
-            label = "MIN",
-            value = String.format(Locale.US, "%02d", minute),
-            onIncrement = {
-                val next = (minute + 1) % 60
-                onMinuteChange(next)
-            },
-            onDecrement = {
-                val prev = if (minute <= 0) 59 else minute - 1
-                onMinuteChange(prev)
-            }
-        )
-
-        Text(
-            text = ":",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 14.dp)
-        )
-
-        // ss Column
-        FlipperWheelColumn(
-            label = "SEC",
-            value = String.format(Locale.US, "%02d", second),
-            onIncrement = {
-                val next = (second + 1) % 60
-                onSecondChange(next)
-            },
-            onDecrement = {
-                val prev = if (second <= 0) 59 else second - 1
-                onSecondChange(prev)
-            }
-        )
-
-        // AM/PM Column
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(start = 6.dp)
-        ) {
-            Text(
-                text = "PERIOD",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(3.dp)
-            ) {
-                Row {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(if (amPm == "AM") SalimBlue else Color.Transparent)
-                            .clickable { onAmPmChange("AM") }
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "AM",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = if (amPm == "AM") Color.White else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(if (amPm == "PM") SalimBlue else Color.Transparent)
-                            .clickable { onAmPmChange("PM") }
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "PM",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = if (amPm == "PM") Color.White else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FlipperWheelColumn(
-    label: String,
-    value: String,
-    onIncrement: () -> Unit,
-    onDecrement: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(52.dp)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        IconButton(
-            onClick = onIncrement,
-            modifier = Modifier.size(28.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = "Increment $label",
-                tint = SalimBlue,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .size(width = 48.dp, height = 36.dp)
-                .liquidGlass(shape = RoundedCornerShape(10.dp), elevation = 2.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-
-        IconButton(
-            onClick = onDecrement,
-            modifier = Modifier.size(28.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = "Decrement $label",
-                tint = SalimBlue,
-                modifier = Modifier.size(20.dp)
-            )
         }
     }
 }

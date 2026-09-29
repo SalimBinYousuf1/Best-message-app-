@@ -28,6 +28,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -238,38 +240,16 @@ fun SettingsScreen(
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        LiquidGlassSlider(
+                        Slider(
                             value = uiState.preferences.bubbleTextScale,
                             onValueChange = { viewModel.setBubbleTextScale(it) },
-                            valueRange = 0.85f..1.35f
-                        )
-                    }
-
-                    HorizontalDivider()
-
-                    // Glass Intensity Slider
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Liquid Glass Frost",
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "${(uiState.preferences.glassIntensity * 100).roundToInt()}%",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = SalimBlue
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        LiquidGlassSlider(
-                            value = uiState.preferences.glassIntensity,
-                            onValueChange = { viewModel.setGlassIntensity(it) },
-                            valueRange = 0.50f..1.0f
+                            valueRange = 0.85f..1.35f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = SalimBlue,
+                                activeTrackColor = SalimBlue,
+                                inactiveTrackColor = if (MaterialTheme.colorScheme.surfaceVariant == Color.Unspecified) Color.LightGray else MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }

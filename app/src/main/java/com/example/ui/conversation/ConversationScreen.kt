@@ -2,6 +2,7 @@ package com.example.ui.conversation
 
 import android.content.Intent
 import android.net.Uri
+import android.provider.ContactsContract
 import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -153,6 +154,28 @@ fun ConversationScreen(
                 subtitle = uiState.conversation?.recipientAddress ?: "",
                 photoUri = uiState.contactInfo?.photoUri,
                 onBackClick = onBackClick,
+                onContactClick = {
+                    val address = uiState.conversation?.recipientAddress ?: ""
+                    if (address.isNotBlank()) {
+                        try {
+                            val contactIntent = Intent(Intent.ACTION_VIEW).apply {
+                                data = Uri.withAppendedPath(
+                                    ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+                                    Uri.encode(address)
+                                )
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            context.startActivity(contactIntent)
+                        } catch (_: Exception) {
+                            try {
+                                val fallbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse("tel:$address")).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                }
+                                context.startActivity(fallbackIntent)
+                            } catch (_: Exception) {}
+                        }
+                    }
+                },
                 onCallClick = {
                     val address = uiState.conversation?.recipientAddress
                     if (!address.isNullOrBlank()) {
@@ -241,6 +264,7 @@ fun ConversationScreen(
 
                             MessageBubble(
                                 message = message,
+                                textScale = uiState.preferences.bubbleTextScale,
                                 onRetry = { viewModel.retryMessage(message.id) },
                                 onToggleStar = { viewModel.toggleStar(message) },
                                 onSelectReaction = { emoji -> viewModel.toggleReaction(message, emoji) },
@@ -331,6 +355,7 @@ private fun ConversationTopBar(
     subtitle: String,
     photoUri: String?,
     onBackClick: () -> Unit,
+    onContactClick: () -> Unit,
     onCallClick: () -> Unit
 ) {
     val isDark = LocalThemeIsDark.current
@@ -366,16 +391,22 @@ private fun ConversationTopBar(
                 )
             }
 
-            ContactAvatar(
-                name = title,
-                address = subtitle,
-                photoUri = photoUri,
-                size = 38.dp
-            )
+            Box(modifier = Modifier.clickable { onContactClick() }) {
+                ContactAvatar(
+                    name = title,
+                    address = subtitle,
+                    photoUri = photoUri,
+                    size = 38.dp
+                )
+            }
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onContactClick() }
+            ) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),

@@ -13,6 +13,10 @@ import com.example.data.repository.TemplateRepository
 import com.example.data.repository.TemplateRepositoryImpl
 import com.example.telephony.NotificationCoordinator
 import com.example.telephony.SmsTransport
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class SalimApplication : Application() {
 
@@ -53,6 +57,14 @@ class SalimApplication : Application() {
 
         // Initialize Notification Channels
         NotificationCoordinator.initNotificationChannels(this)
+
+        // Real-Time Incremental Sync Engine: observe incoming SMS in real-time
+        com.example.telephony.SmsObserverManager.startObserving(this)
+
+        // Offline-First Bulk Ingestion Engine in background (<200ms)
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            com.example.telephony.SmsIngestionManager.ingestConversationThreads(this@SalimApplication)
+        }
     }
 
     companion object {

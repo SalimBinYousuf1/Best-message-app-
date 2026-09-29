@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.view.HapticFeedbackConstants
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -12,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -27,10 +29,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
@@ -77,7 +83,8 @@ fun MessageBubble(
     onToggleStar: () -> Unit,
     onSelectReaction: (String) -> Unit,
     onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    textScale: Float = 1.0f
 ) {
     val context = LocalContext.current
     val view = LocalView.current
@@ -106,6 +113,13 @@ fun MessageBubble(
             bottomEnd = 18.dp
         )
     }
+
+    val isLocation = message.attachmentType == AttachmentType.LOCATION ||
+        message.body.contains("maps.google.com") ||
+        message.body.startsWith("geo:")
+
+    val isContact = message.attachmentType == AttachmentType.CONTACT ||
+        message.body.startsWith("Contact:")
 
     Box(
         modifier = modifier
@@ -152,8 +166,137 @@ fun MessageBubble(
                         .padding(horizontal = 14.dp, vertical = 10.dp)
                 ) {
                     Column {
-                        // Attachment if present
-                        if (!message.attachmentUri.isNullOrBlank()) {
+                        // Location Card with interactive map link
+                        if (isLocation) {
+                            val mapUrl = if (message.body.contains("maps.google.com")) {
+                                message.body
+                            } else {
+                                message.attachmentUri ?: "https://maps.google.com"
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isOutgoing) Color(0x33FFFFFF) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                    .clickable {
+                                        try {
+                                            val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse(mapUrl)).apply {
+                                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                            }
+                                            context.startActivity(mapIntent)
+                                        } catch (_: Exception) {}
+                                    }
+                                    .padding(8.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFEF4444)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.LocationOn,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Shared Location",
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = (14f * textScale).sp
+                                            ),
+                                            color = if (isOutgoing) Color.White else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "Tap to open in Google Maps",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontSize = (11f * textScale).sp
+                                            ),
+                                            color = if (isOutgoing) Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Icon(
+                                        imageVector = Icons.Default.OpenInNew,
+                                        contentDescription = "Open Map",
+                                        tint = if (isOutgoing) Color.White else SalimBlue,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+
+                        // Contact Card
+                        if (isContact) {
+                            val contactPayload = message.body
+                            val phoneOnly = contactPayload.substringAfter("Phone: ").substringBefore("\n").trim()
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isOutgoing) Color(0x33FFFFFF) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                    .clickable {
+                                        if (phoneOnly.isNotBlank()) {
+                                            try {
+                                                val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneOnly")).apply {
+                                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                                }
+                                                context.startActivity(dialIntent)
+                                            } catch (_: Exception) {}
+                                        }
+                                    }
+                                    .padding(8.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFF59E0B)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = message.attachmentName ?: "Shared Contact",
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = (14f * textScale).sp
+                                            ),
+                                            color = if (isOutgoing) Color.White else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = contactPayload,
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontSize = (11f * textScale).sp
+                                            ),
+                                            color = if (isOutgoing) Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+
+                        // Attachment if present (Image or Document)
+                        if (!message.attachmentUri.isNullOrBlank() && !isLocation && !isContact) {
                             when (message.attachmentType) {
                                 AttachmentType.IMAGE -> {
                                     AsyncImage(
@@ -171,18 +314,23 @@ fun MessageBubble(
                                     Text(
                                         text = "📎 ${message.attachmentName ?: "Attachment"}",
                                         color = if (isOutgoing) Color.White else MaterialTheme.colorScheme.onSurface,
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = (12f * textScale).sp
+                                        ),
                                         modifier = Modifier.padding(bottom = 4.dp)
                                     )
                                 }
                             }
                         }
 
-                        // Message Body
-                        if (message.body.isNotBlank()) {
+                        // Message Body (only if not already displayed as custom location/contact card)
+                        if (message.body.isNotBlank() && !isLocation && !isContact) {
                             Text(
                                 text = message.body,
-                                style = com.example.ui.theme.MessageBodyStyle,
+                                style = com.example.ui.theme.MessageBodyStyle.copy(
+                                    fontSize = (15.5f * textScale).sp,
+                                    lineHeight = (22f * textScale).sp
+                                ),
                                 color = if (isOutgoing) Color.White else MaterialTheme.colorScheme.onSurface
                             )
                         }

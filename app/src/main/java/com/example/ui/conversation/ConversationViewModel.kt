@@ -145,6 +145,15 @@ class ConversationViewModel(
             }
         }
 
+        // 3. Asynchronously ingest full contact thread history from system SMS in background
+        viewModelScope.launch(Dispatchers.IO) {
+            com.example.telephony.SmsIngestionManager.ingestThreadHistory(
+                context = getApplication(),
+                recipientAddress = recipientAddress,
+                conversationId = conversationId
+            )
+        }
+
         viewModelScope.launch {
             val contact = ContactResolver.resolveContact(getApplication(), recipientAddress)
             _contactInfo.value = contact
@@ -178,7 +187,16 @@ class ConversationViewModel(
         attachmentName: String? = null
     ) {
         val trimmed = body.trim()
-        if (trimmed.isEmpty() && attachmentUri == null) return
+        val effectiveBody = if (trimmed.isEmpty()) {
+            when (attachmentType) {
+                AttachmentType.LOCATION -> attachmentUri ?: ""
+                AttachmentType.CONTACT -> attachmentName ?: "Contact"
+                else -> ""
+            }
+        } else {
+            trimmed
+        }
+        if (effectiveBody.isEmpty() && attachmentUri == null) return
 
         viewModelScope.launch {
             _isSending.value = true
@@ -189,7 +207,7 @@ class ConversationViewModel(
             val result = messagingRepository.sendMessage(
                 conversationId = conversationId,
                 recipientAddress = recipientAddress,
-                body = trimmed,
+                body = effectiveBody,
                 attachmentUri = attachmentUri,
                 attachmentType = attachmentType,
                 attachmentName = attachmentName
